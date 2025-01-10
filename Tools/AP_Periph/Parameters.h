@@ -94,6 +94,11 @@ public:
         k_param_rangefinder_baud1,
         k_param_rangefinder_port1,
         k_param_options,
+        k_param_rpm_msg_rate,
+        k_param_esc_rate,
+        k_param_esc_extended_telem_rate,
+        k_param_imu_sample_rate,
+        k_param_imu,
     };
 
     AP_Int16 format_version;
@@ -173,6 +178,7 @@ public:
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
+    AP_Int16 esc_rate;
     AP_Int8 esc_pwm_type;
     AP_Int16 esc_command_timeout_ms;
 #if HAL_WITH_ESC_TELEM && !HAL_GCS_ENABLED
@@ -180,6 +186,9 @@ public:
 #endif
 #if HAL_WITH_ESC_TELEM
     AP_Int32 esc_telem_rate;
+#if AP_EXTENDED_ESC_TELEM_ENABLED
+    AP_Int16 esc_extended_telem_rate;
+#endif
 #endif
 #endif
 
@@ -204,12 +213,20 @@ public:
     AP_Int8 efi_port;
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_IMU
+    AP_Int16 imu_sample_rate;
+#endif
+
 #if HAL_PERIPH_CAN_MIRROR
     AP_Int8 can_mirror_ports;
 #endif // HAL_PERIPH_CAN_MIRROR
 
 #ifdef HAL_PERIPH_ENABLE_DEVICE_TEMPERATURE
     AP_Int8 temperature_msg_rate;
+#endif
+
+#ifdef HAL_PERIPH_ENABLE_RPM_STREAM
+    AP_Int16 rpm_msg_rate;
 #endif
 
 #if HAL_CANFD_SUPPORTED

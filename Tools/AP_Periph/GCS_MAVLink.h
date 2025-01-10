@@ -41,6 +41,7 @@ protected:
 
     void send_nav_controller_output() const override {};
     void send_pid_tuning() override {};
+    virtual uint8_t send_available_mode(uint8_t index) const override { return 0; }
 };
 
 /*
@@ -61,7 +62,7 @@ protected:
 
     GCS_MAVLINK_Periph *new_gcs_mavlink_backend(GCS_MAVLINK_Parameters &params,
                                                AP_HAL::UARTDriver &uart) override {
-        return new GCS_MAVLINK_Periph(params, uart);
+        return NEW_NOTHROW GCS_MAVLINK_Periph(params, uart);
     }
 
 private:

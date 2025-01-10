@@ -208,6 +208,8 @@ void Tailsitter::setup()
         return;
     }
 
+    quadplane.thrust_type = QuadPlane::ThrustType::TAILSITTER;
+
     // Set tailsitter transition rate to match old calculation
     if (!transition_rate_fw.configured()) {
         transition_rate_fw.set_and_save(transition_angle_fw / (quadplane.transition_time_ms/2000.0f));
@@ -241,7 +243,7 @@ void Tailsitter::setup()
         quadplane.options.set(quadplane.options.get() | int32_t(QuadPlane::OPTION::ONLY_ARM_IN_QMODE_OR_AUTO));
     }
 
-    transition = new Tailsitter_Transition(quadplane, motors, *this);
+    transition = NEW_NOTHROW Tailsitter_Transition(quadplane, motors, *this);
     if (!transition) {
         AP_BoardConfig::allocation_error("tailsitter transition");
     }
@@ -286,9 +288,6 @@ void Tailsitter::output(void)
         // if motor test is running we don't want to overwrite it with output_motor_mask or motors_output
         return;
     }
-
-    float tilt_left = 0.0f;
-    float tilt_right = 0.0f;
 
     // throttle 0 to 1
     float throttle = SRV_Channels::get_output_scaled(SRV_Channel::k_throttle) * 0.01;
@@ -338,6 +337,10 @@ void Tailsitter::output(void)
         if (!quadplane.assisted_flight) {
             // set AP_MotorsMatrix throttles for forward flight
             motors->output_motor_mask(throttle, motor_mask, plane.rudder_dt);
+
+            // No tilt output unless forward gain is set
+            float tilt_left = 0.0;
+            float tilt_right = 0.0;
 
             // in forward flight: set motor tilt servos and throttles using FW controller
             if (vectored_forward_gain > 0) {
@@ -396,8 +399,11 @@ void Tailsitter::output(void)
             }
 
             // output tilt motors
-            tilt_left = 0.0f;
-            tilt_right = 0.0f;
+
+            // No output unless hover gain is set
+            float tilt_left = 0.0;
+            float tilt_right = 0.0;
+
             if (vectored_hover_gain > 0) {
                 const float hover_throttle = motors->get_throttle_hover();
                 const float output_throttle = motors->get_throttle();
@@ -436,8 +442,10 @@ void Tailsitter::output(void)
         tailsitter_motors->set_min_throttle(0.0);
     }
 
-    tilt_left = 0.0f;
-    tilt_right = 0.0f;
+    // No tilt output unless hover gain is set
+    float tilt_left = 0.0;
+    float tilt_right = 0.0;
+
     if (vectored_hover_gain > 0) {
         // thrust vectoring VTOL modes
         tilt_left = SRV_Channels::get_output_scaled(SRV_Channel::k_tiltMotorLeft);
@@ -707,7 +715,7 @@ void Tailsitter::speed_scaling(void)
             // (mass / A) is disk loading DL so:
             // Ue^2 = (((t / t_h) * DL * 9.81)/(0.5 * rho)) + U0^2
 
-            const float rho = SSL_AIR_DENSITY * plane.barometer.get_air_density_ratio();
+            const float rho = SSL_AIR_DENSITY * quadplane.ahrs.get_air_density_ratio();
             float hover_rho = rho;
             if ((gain_scaling_mask & TAILSITTER_GSCL_ALTITUDE) != 0) {
                 // if applying altitude correction use sea level density for hover case
@@ -752,7 +760,7 @@ void Tailsitter::speed_scaling(void)
 
     if ((gain_scaling_mask & TAILSITTER_GSCL_ALTITUDE) != 0) {
         // air density correction
-        spd_scaler /= plane.barometer.get_air_density_ratio();
+        spd_scaler /= quadplane.ahrs.get_air_density_ratio();
     }
 
     const SRV_Channel::Aux_servo_function_t functions[] = {

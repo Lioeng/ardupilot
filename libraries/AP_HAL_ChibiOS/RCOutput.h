@@ -286,6 +286,11 @@ public:
     void rcout_thread();
 
     /*
+      Force group trigger from all callers rather than just from the main thread
+    */
+    void force_trigger_groups(bool onoff) override { force_trigger = onoff; }
+
+    /*
      timer information
      */
     void timer_info(ExpandingString &str) override;
@@ -579,6 +584,8 @@ private:
     uint8_t _dshot_cycle;
     // virtual timer for post-push() pulses
     virtual_timer_t _dshot_rate_timer;
+    // force triggering of groups, this is used by the rate thread to ensure output occurs
+    bool force_trigger;
 
 #if HAL_DSHOT_ENABLED
     // dshot commands
@@ -733,6 +740,7 @@ private:
     static void bdshot_receive_pulses_DMAR_f1(pwm_group* group);
     static void bdshot_reset_pwm(pwm_group& group, uint8_t telem_channel);
     static void bdshot_reset_pwm_f1(pwm_group& group, uint8_t telem_channel);
+    static void bdshot_disable_pwm_f1(pwm_group& group);
     static void bdshot_config_icu_dshot(stm32_tim_t* TIMx, uint8_t chan, uint8_t ccr_ch);
     static void bdshot_config_icu_dshot_f1(stm32_tim_t* TIMx, uint8_t chan, uint8_t ccr_ch);
     static uint32_t bdshot_get_output_rate_hz(const enum output_mode mode);

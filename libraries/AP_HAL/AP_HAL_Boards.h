@@ -6,16 +6,20 @@
  */
 #pragma once
 
+// @LoggerEnum: HAL_BOARD
 #define HAL_BOARD_SITL     3
-#define HAL_BOARD_SMACCM   4  // unused
-#define HAL_BOARD_PX4      5  // unused
+// #define HAL_BOARD_SMACCM   4  // unused
+// #define HAL_BOARD_PX4      5  // unused
 #define HAL_BOARD_LINUX    7
-#define HAL_BOARD_VRBRAIN  8
+// #define HAL_BOARD_VRBRAIN  8
 #define HAL_BOARD_CHIBIOS  10
-#define HAL_BOARD_F4LIGHT  11 // reserved
+// #define HAL_BOARD_F4LIGHT  11 // reserved
 #define HAL_BOARD_ESP32	   12
+#define HAL_BOARD_QURT     13
 #define HAL_BOARD_EMPTY    99
+// @LoggerEnumEnd
 
+// @LoggerEnum: HAL_BOARD_SUBTYPE
 /* Default board subtype is -1 */
 #define HAL_BOARD_SUBTYPE_NONE -1
 
@@ -69,6 +73,7 @@
 #define HAL_BOARD_SUBTYPE_ESP32_NICK            6006
 #define HAL_BOARD_SUBTYPE_ESP32_S3DEVKIT        6007
 #define HAL_BOARD_SUBTYPE_ESP32_S3EMPTY         6008
+// @LoggerEnumEnd
 
 /* InertialSensor driver types */
 #define HAL_INS_NONE         0
@@ -133,12 +138,12 @@
     #include <AP_HAL/board/linux.h>
 #elif CONFIG_HAL_BOARD == HAL_BOARD_EMPTY
     #include <AP_HAL/board/empty.h>
-#elif CONFIG_HAL_BOARD == HAL_BOARD_VRBRAIN
-    #include <AP_HAL/board/vrbrain.h>
 #elif CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
 	#include <AP_HAL/board/chibios.h>
 #elif CONFIG_HAL_BOARD == HAL_BOARD_ESP32
     #include <AP_HAL/board/esp32.h>
+#elif CONFIG_HAL_BOARD == HAL_BOARD_QURT
+    #include <AP_HAL/board/qurt.h>
 #else
 #error "Unknown CONFIG_HAL_BOARD type"
 #endif
@@ -163,10 +168,6 @@
 #define HAL_NUM_CAN_IFACES 0
 #endif
 
-#ifndef HAL_RCINPUT_WITH_AP_RADIO
-#define HAL_RCINPUT_WITH_AP_RADIO 0
-#endif
-
 #ifndef HAL_WITH_IO_MCU
 #define HAL_WITH_IO_MCU 0
 #endif
@@ -179,11 +180,17 @@
 #define HAL_WITH_IO_MCU_DSHOT HAL_WITH_IO_MCU_BIDIR_DSHOT
 #endif
 
-// this is used as a general mechanism to make a 'small' build by
-// dropping little used features. We use this to allow us to keep
-// FMUv2 going for as long as possible
-#ifndef HAL_MINIMIZE_FEATURES
-#define HAL_MINIMIZE_FEATURES       0
+#ifndef HAL_REQUIRES_BDSHOT_SUPPORT
+#define HAL_REQUIRES_BDSHOT_SUPPORT (defined(HAL_WITH_BIDIR_DSHOT) || HAL_WITH_IO_MCU_BIDIR_DSHOT)
+#endif
+
+// support for Extended DShot Telemetry v2 is enabled only if any kind of such telemetry
+// can in principle arrive, either from servo outputs or from IOMCU
+
+// if not desired, set to 0 - and if IOMCU has bidirectional DShot enabled, recompile it too,
+// otherwise the communication to IOMCU breaks!
+#ifndef AP_EXTENDED_DSHOT_TELEM_V2_ENABLED
+#define AP_EXTENDED_DSHOT_TELEM_V2_ENABLED HAL_REQUIRES_BDSHOT_SUPPORT
 #endif
 
 #ifndef BOARD_FLASH_SIZE
@@ -366,10 +373,20 @@
 
 #ifndef HAL_GPIO_LED_ON
 #define HAL_GPIO_LED_ON 0
+#elif HAL_GPIO_LED_ON == 0
+#error "Do not specify HAL_GPIO_LED_ON if you are setting it to the default, 0"
 #endif
 
 #ifdef HAL_GPIO_LED_OFF
 #error "HAL_GPIO_LED_OFF must not be defined, it is implicitly !HAL_GPIO_LED_ON"
+#endif
+
+#ifndef HAL_WITH_POSTYPE_DOUBLE
+#define HAL_WITH_POSTYPE_DOUBLE BOARD_FLASH_SIZE > 1024
+#endif
+
+#ifndef HAL_INS_RATE_LOOP
+#define HAL_INS_RATE_LOOP 0
 #endif
 
 #define HAL_GPIO_LED_OFF (!HAL_GPIO_LED_ON)

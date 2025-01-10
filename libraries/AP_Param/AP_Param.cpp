@@ -112,6 +112,9 @@ uint16_t AP_Param::param_overrides_len;
 uint16_t AP_Param::num_param_overrides;
 uint16_t AP_Param::num_read_only;
 
+// goes true if we run out of param space
+bool AP_Param::eeprom_full;
+
 ObjectBuffer_TS<AP_Param::param_save> AP_Param::save_queue{30};
 bool AP_Param::registered_save_handler;
 
@@ -265,7 +268,12 @@ void AP_Param::check_group_info(const struct AP_Param::GroupInfo *  group_info,
         if (size == 0) {
             FATAL("invalid type in %s", group_info[i].name);
         }
-        if (prefix_length + strlen(group_info[i].name) > 16) {
+        uint8_t param_name_length = prefix_length + strlen(group_info[i].name);
+        if (type == AP_PARAM_VECTOR3F) {
+            // need room for _X/_Y/_Z
+            param_name_length += 2;
+        }
+        if (param_name_length > 16) {
             FATAL("suffix is too long in %s", group_info[i].name);
         }
         (*total_size) += size + sizeof(struct Param_header);
@@ -1192,6 +1200,8 @@ void AP_Param::save_sync(bool force_save, bool send_to_gcs)
         return;
     }
     if (ofs == (uint16_t) ~0) {
+        eeprom_full = true;
+        DEV_PRINTF("EEPROM full\n");
         return;
     }
 
@@ -1224,6 +1234,7 @@ void AP_Param::save_sync(bool force_save, bool send_to_gcs)
 
     if (ofs+type_size((enum ap_var_type)phdr.type)+2*sizeof(phdr) >= _storage.size()) {
         // we are out of room for saving variables
+        eeprom_full = true;
         DEV_PRINTF("EEPROM full\n");
         return;
     }
@@ -1260,6 +1271,7 @@ void AP_Param::save(bool force_save)
         if (hal.util->get_soft_armed() && hal.scheduler->in_main_thread()) {
             // if we are armed in main thread then don't sleep, instead we lose the
             // parameter save
+            INTERNAL_ERROR(AP_InternalError::error_t::flow_of_control);
             return;
         }
         // when we are disarmed then loop waiting for a slot to become
@@ -1353,8 +1365,7 @@ bool AP_Param::load(void)
         return false;
     }
 
-    AP_Param *ap;
-    ap = this;
+    AP_Param *ap = this;
     if (idx != 0) {
         ap = (AP_Param *)((ptrdiff_t)ap) - (idx*sizeof(float));
     }
@@ -1605,7 +1616,7 @@ void AP_Param::load_defaults_file_from_filesystem(const char *default_file, bool
 #endif
     } else {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
-        AP_HAL::panic("Failed to load defaults from %s\n", default_file);
+        AP_HAL::panic("Failed to load defaults from %s", default_file);
 #else
         printf("Failed to load defaults from %s\n", default_file);
 #endif
@@ -1967,8 +1978,7 @@ void AP_Param::convert_old_parameter(const struct ConversionInfo *info, float sc
 
     // find the new variable in the variable structures
     enum ap_var_type ptype;
-    AP_Param *ap2;
-    ap2 = find(&info->new_name[0], &ptype);
+    AP_Param *ap2 = find(&info->new_name[0], &ptype);
     if (ap2 == nullptr) {
         DEV_PRINTF("Unknown conversion '%s'\n", info->new_name);
         return;
@@ -2393,7 +2403,7 @@ bool AP_Param::load_defaults_file(const char *filename, bool last_pass)
     num_param_overrides = 0;
     num_read_only = 0;
 
-    param_overrides = new param_override[num_defaults];
+    param_overrides = NEW_NOTHROW param_override[num_defaults];
     if (param_overrides == nullptr) {
         AP_HAL::panic("AP_Param: Failed to allocate overrides");
         return false;
@@ -2488,7 +2498,7 @@ void AP_Param::load_param_defaults(const volatile char *ptr, int32_t length, boo
         return;
     }
 
-    param_overrides = new param_override[num_defaults];
+    param_overrides = NEW_NOTHROW param_override[num_defaults];
     if (param_overrides == nullptr) {
         AP_HAL::panic("AP_Param: Failed to allocate overrides");
         return;
@@ -2529,7 +2539,7 @@ void AP_Param::load_param_defaults(const volatile char *ptr, int32_t length, boo
         AP_Param *vp = find(pname, &var_type);
         if (!vp) {
             if (last_pass) {
-#if ENABLE_DEBUG
+#if ENABLE_DEBUG && (AP_PARAM_MAX_EMBEDDED_PARAM > 0)
                 ::printf("Ignored unknown param %s from embedded region (offset=%u)\n",
                          pname, unsigned(ptr - param_defaults_data.data));
                 hal.console->printf(
@@ -2884,7 +2894,7 @@ void AP_Param::add_default(AP_Param *ap, float v)
     }
 
     // add to list
-    defaults_list *new_item = new defaults_list;
+    defaults_list *new_item = NEW_NOTHROW defaults_list;
     if (new_item == nullptr) {
         return;
     }
@@ -2940,14 +2950,14 @@ void AP_Param::show_all(AP_HAL::BetterStream *port, bool showKeyValues)
     ParamToken token;
     AP_Param *ap;
     enum ap_var_type type;
-    float default_value = nanf("0x4152");  // from logger quiet_nanf
+    float default_value = NaNf;  // from logger quiet_nanf
 
     for (ap=AP_Param::first(&token, &type, &default_value);
          ap;
          ap=AP_Param::next_scalar(&token, &type, &default_value)) {
         if (showKeyValues) {
             ::printf("Key %u: Index %u: GroupElement %u : Default %f  :", (unsigned)var_info(token.key).key, (unsigned)token.idx, (unsigned)token.group_element, default_value);
-            default_value = nanf("0x4152");
+            default_value = NaNf;
         }
         show(ap, token, type, port);
         hal.scheduler->delay(1);

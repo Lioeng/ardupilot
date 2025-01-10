@@ -19,9 +19,6 @@ env AP_PERIPH 1
 define STM32_ST_USE_TIMER 5
 define CH_CFG_ST_RESOLUTION 32
 
-# enable watchdog
-define HAL_WATCHDOG_ENABLED_DEFAULT true
-
 # crystal frequency
 OSCILLATOR_HZ 16000000
 
@@ -33,8 +30,6 @@ define HAL_NO_GPIO_IRQ
 define HAL_USE_RTC FALSE
 
 define DMA_RESERVE_SIZE 0
-
-define HAL_NO_MONITOR_THREAD
 
 define HAL_DEVICE_THREAD_STACK 768
 

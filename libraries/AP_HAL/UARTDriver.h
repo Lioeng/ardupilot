@@ -78,6 +78,9 @@ public:
 
     // read buffer from a locked port. If port is locked and key is not correct then -1 is returned
     ssize_t read_locked(uint8_t *buf, size_t count, uint32_t key) WARN_IF_UNUSED;
+
+    // get current parity for passthrough use
+    uint8_t get_parity(void);
     
     // control optional features
     virtual bool set_options(uint16_t options) { _last_options = options; return options==0; }
@@ -103,9 +106,13 @@ public:
         FLOW_CONTROL_DISABLE=0,
         FLOW_CONTROL_ENABLE=1,
         FLOW_CONTROL_AUTO=2,
+        FLOW_CONTROL_RTS_DE=3, // RTS pin is used as a driver enable (used in RS-485)
     };
     virtual void set_flow_control(enum flow_control flow_control_setting) {};
     virtual enum flow_control get_flow_control(void) { return FLOW_CONTROL_DISABLE; }
+
+    // Return true if flow control is currently enabled
+    bool flow_control_enabled() { return flow_control_enabled(get_flow_control()); }
 
     virtual void configure_parity(uint8_t v){};
     virtual void set_stop_bits(int n){};
@@ -185,6 +192,9 @@ public:
     // return true requested baud on USB port
     virtual uint32_t get_usb_baud(void) const { return 0; }
 
+    // return requested parity on USB port
+    virtual uint8_t get_usb_parity(void) const { return parity; }
+
     // disable TX/RX pins for unusued uart
     virtual void disable_rxtx(void) const {}
 
@@ -208,6 +218,8 @@ protected:
     // key for a locked port
     uint32_t lock_write_key;
     uint32_t lock_read_key;
+
+    uint8_t parity;
 
     /*
       backend begin method
@@ -239,6 +251,9 @@ protected:
 
     // discard incoming data on the port
     virtual bool _discard_input(void) = 0;
+
+    // Helper to check if flow control is enabled given the passed setting
+    bool flow_control_enabled(enum flow_control flow_control_setting) const;
 
 #if HAL_UART_STATS_ENABLED
     // Getters for cumulative tx and rx counts

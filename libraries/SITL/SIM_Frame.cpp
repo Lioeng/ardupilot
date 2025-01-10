@@ -323,12 +323,7 @@ static Frame supported_frames[] =
 // get air density in kg/m^3
 float Frame::get_air_density(float alt_amsl) const
 {
-    float sigma, delta, theta;
-
-    AP_Baro::SimpleAtmosphere(alt_amsl * 0.001f, sigma, delta, theta);
-
-    const float air_pressure = SSL_AIR_PRESSURE * delta;
-    return air_pressure / (ISA_GAS_CONSTANT * (C_TO_KELVIN(model.refTempC)));
+    return AP_Baro::get_air_density_for_alt_amsl(alt_amsl);
 }
 
 /*
@@ -343,15 +338,15 @@ void Frame::load_frame_params(const char *model_json)
     } else {
         IGNORE_RETURN(asprintf(&fname, "@ROMFS/models/%s", model_json));
         if (AP::FS().stat(model_json, &st) != 0) {
-            AP_HAL::panic("%s failed to load\n", model_json);
+            AP_HAL::panic("%s failed to load", model_json);
         }
     }
     if (fname == nullptr) {
-        AP_HAL::panic("%s failed to load\n", model_json);
+        AP_HAL::panic("%s failed to load", model_json);
     }
     AP_JSON::value *obj = AP_JSON::load_json(model_json);
     if (obj == nullptr) {
-        AP_HAL::panic("%s failed to load\n", model_json);
+        AP_HAL::panic("%s failed to load", model_json);
     }
 
     enum class VarType {
@@ -414,7 +409,7 @@ void Frame::load_frame_params(const char *model_json)
     };
     char label_name[20];
     for (uint8_t i=0; i<ARRAY_SIZE(per_motor_vars); i++) {
-        for (uint8_t j=0; j<12; j++) {
+        for (uint8_t j=0; j<SIM_FRAME_MAX_ACTUATORS; j++) {
             snprintf(label_name, 20, "motor%i_%s", j+1, per_motor_vars[i].label);
             auto v = obj->get(label_name);
             if (v.is<AP_JSON::null>()) {

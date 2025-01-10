@@ -60,9 +60,9 @@
 #include "Fins.h"
 #include "Loiter.h"
 
-#include "RC_Channel.h"         // RC Channel Library
+#include "RC_Channel_Blimp.h"         // RC Channel Library
 
-#include "GCS_Mavlink.h"
+#include "GCS_MAVLink_Blimp.h"
 #include "GCS_Blimp.h"
 #include "AP_Arming.h"
 
@@ -168,7 +168,6 @@ private:
     // There are multiple states defined such as STABILIZE, ACRO,
     Mode::Number control_mode;
     ModeReason control_mode_reason = ModeReason::UNKNOWN;
-    Mode::Number prev_control_mode;
 
     RCMapper rcmap;
 

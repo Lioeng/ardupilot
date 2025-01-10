@@ -323,6 +323,10 @@ class VehicleInfo(object):
                 "waf_target": "bin/arduplane",
                 "default_params_filename": [], # defaults are loaded in SIM_Plane.cpp
             },
+            "glider": {
+                "waf_target": "bin/arduplane",
+                "default_params_filename": "default_params/glider.parm",
+            },
             "quadplane-copter_tailsitter": {
                 "waf_target": "bin/arduplane",
                 "default_params_filename": ["default_params/quadplane.parm","default_params/quadplane-copter_tailsitter.parm"],
@@ -368,6 +372,10 @@ class VehicleInfo(object):
                 "extra_mavlink_cmds": "module load sitl_calibration;",
                 "external": True,  # lies!  OTOH, hard to take off with this
             },
+            "stratoblimp": {
+                "waf_target": "bin/arduplane",
+                "default_params_filename": "default_params/stratoblimp.parm",
+            },
         },
     },
     "Rover": {
@@ -382,6 +390,11 @@ class VehicleInfo(object):
                 "waf_target": "bin/ardurover",
                 "default_params_filename": ["default_params/rover.parm",
                                             "default_params/rover-skid.parm"],
+            },
+            "rover-omni3mecanum": {
+                "waf_target": "bin/ardurover",
+                "default_params_filename": ["default_params/rover.parm",
+                                            "default_params/rover-omni3mecanum.parm"],
             },
             "rover-vectored": {
                 "waf_target": "bin/ardurover",
@@ -398,6 +411,12 @@ class VehicleInfo(object):
                 "waf_target": "bin/ardurover",
                 "default_params_filename": ["default_params/rover.parm",
                                             "default_params/motorboat.parm"],
+            },
+            "motorboat-skid": {
+                "waf_target": "bin/ardurover",
+                "default_params_filename": ["default_params/rover.parm",
+                                            "default_params/motorboat.parm",
+                                            "default_params/rover-skid.parm"],
             },
             "sailboat": {
                 "waf_target": "bin/ardurover",

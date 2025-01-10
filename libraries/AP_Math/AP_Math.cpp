@@ -67,14 +67,17 @@ template float safe_asin<short>(const short v);
 template float safe_asin<float>(const float v);
 template float safe_asin<double>(const double v);
 
+// sqrt which takes any type and returns 0 if the input is NaN or less than zero
 template <typename T>
 float safe_sqrt(const T v)
 {
-    float ret = sqrtf(static_cast<float>(v));
-    if (isnan(ret)) {
-        return 0;
+    // cast before checking so we sqrtf the same value we check
+    const float val = static_cast<float>(v);
+    // use IEEE-754 compliant function which returns false if val is NaN
+    if (isgreaterequal(val, 0)) {
+        return sqrtf(val);
     }
-    return ret;
+    return 0;
 }
 
 template float safe_sqrt<int>(const int v);
@@ -339,14 +342,13 @@ uint16_t get_random16(void)
 }
 
 
-#if AP_SIM_ENABLED
-// generate a random float between -1 and 1, for use in SITL
+// generate a random float between -1 and 1
 float rand_float(void)
 {
 #if CONFIG_HAL_BOARD == HAL_BOARD_SITL
     return ((((unsigned)random()) % 2000000) - 1.0e6) / 1.0e6;
 #else
-    return get_random16() / 65535.0;
+    return (get_random16() / 65535.0) * 2 - 1;
 #endif
 }
 
@@ -359,7 +361,6 @@ Vector3f rand_vec3f(void)
         rand_float()
     };
 }
-#endif
 
 /*
   return true if two rotations are equivalent

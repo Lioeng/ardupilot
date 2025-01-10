@@ -6,6 +6,7 @@
 #include <AP_GPS/AP_GPS.h>
 #include <AP_Compass/AP_Compass.h>
 #include <AP_Baro/AP_Baro.h>
+#include <AP_InertialSensor/AP_InertialSensor.h>
 #include "SRV_Channel/SRV_Channel.h"
 #include <AP_Notify/AP_Notify.h>
 #include <AP_Logger/AP_Logger.h>
@@ -91,6 +92,10 @@
     #endif
 #endif
 
+#if defined(HAL_PERIPH_ENABLE_RPM_STREAM) && !defined(HAL_PERIPH_ENABLE_RPM)
+    #error "HAL_PERIPH_ENABLE_RPM_STREAM requires HAL_PERIPH_ENABLE_RPM"
+#endif
+
 #ifndef AP_PERIPH_SAFETY_SWITCH_ENABLED
 #define AP_PERIPH_SAFETY_SWITCH_ENABLED defined(HAL_PERIPH_ENABLE_RC_OUT)
 #endif
@@ -169,6 +174,10 @@ public:
     void send_relposheading_msg();
     void can_baro_update();
     void can_airspeed_update();
+#ifdef HAL_PERIPH_ENABLE_IMU
+    void can_imu_update();
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RANGEFINDER
     void can_rangefinder_update();
 #endif
@@ -226,10 +235,19 @@ public:
     AP_Baro baro;
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_IMU
+    AP_InertialSensor imu;
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_RPM
     AP_RPM rpm_sensor;
     uint32_t rpm_last_update_ms;
+#ifdef HAL_PERIPH_ENABLE_RPM_STREAM
+    void rpm_sensor_send();
+    uint32_t rpm_last_send_ms;
+    uint8_t rpm_last_sent_index;
 #endif
+#endif // HAL_PERIPH_ENABLE_RPM
 
 #ifdef HAL_PERIPH_ENABLE_BATTERY
     void handle_battery_failsafe(const char* type_str, const int8_t action) { }
@@ -325,9 +343,15 @@ public:
 #ifdef HAL_PERIPH_ENABLE_RC_OUT
 #if HAL_WITH_ESC_TELEM
     AP_ESC_Telem esc_telem;
+    uint8_t get_motor_number(const uint8_t esc_number) const;
     uint32_t last_esc_telem_update_ms;
     void esc_telem_update();
     uint32_t esc_telem_update_period_ms;
+#if AP_EXTENDED_ESC_TELEM_ENABLED
+    void esc_telem_extended_update(const uint32_t &now_ms);
+    uint32_t last_esc_telem_extended_update;
+    uint8_t last_esc_telem_extended_sent_id;
+#endif
 #endif
 
     SRV_Channels servo_channels;
@@ -544,6 +568,15 @@ public:
     uint16_t pool_peak_percent();
     void set_rgb_led(uint8_t red, uint8_t green, uint8_t blue);
 
+#if AP_SIM_ENABLED
+    // update simulation of servos
+    void sim_update_actuator(uint8_t actuator_id);
+    struct {
+        uint32_t mask;
+        uint32_t last_send_ms;
+    } sim_actuator;
+#endif
+    
     struct dronecan_protocol_t {
         CanardInstance canard;
         uint32_t canard_memory_pool[HAL_CAN_POOL_SIZE/sizeof(uint32_t)];
@@ -568,6 +601,8 @@ public:
 #if AP_AHRS_ENABLED
     AP_AHRS ahrs;
 #endif
+
+    HAL_Semaphore canard_broadcast_semaphore;
 };
 
 #ifndef CAN_APP_NODE_NAME

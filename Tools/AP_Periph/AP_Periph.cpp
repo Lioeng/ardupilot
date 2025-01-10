@@ -168,6 +168,15 @@ void AP_Periph_FW::init()
     baro.init();
 #endif
 
+#ifdef HAL_PERIPH_ENABLE_IMU
+    if (g.imu_sample_rate) {
+        imu.init(g.imu_sample_rate);
+        if (imu.get_accel_count() > 0 || imu.get_gyro_count() > 0) {
+            hal.scheduler->thread_create(FUNCTOR_BIND_MEMBER(&AP_Periph_FW::can_imu_update, void), "IMU_UPDATE", 16384, AP_HAL::Scheduler::PRIORITY_CAN, 0);
+        }
+    }
+#endif
+
 #ifdef HAL_PERIPH_ENABLE_BATTERY
     battery_lib.init();
 #endif
@@ -208,7 +217,7 @@ void AP_Periph_FW::init()
 #endif
 
 #ifdef HAL_PERIPH_ENABLE_AIRSPEED
-#if CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS
+#if (CONFIG_HAL_BOARD == HAL_BOARD_CHIBIOS) && (HAL_USE_I2C == TRUE)
     const bool pins_enabled = ChibiOS::I2CBus::check_select_pins(0x01);
     if (pins_enabled) {
         ChibiOS::I2CBus::set_bus_to_floating(0);
@@ -268,7 +277,7 @@ void AP_Periph_FW::init()
     for (uint8_t i = 0; i < ESC_NUMBERS; i++) {
         const uint8_t port = g.esc_serial_port[i];
         if (port < SERIALMANAGER_NUM_PORTS) { // skip bad ports
-            apd_esc_telem[i] = new ESC_APD_Telem (hal.serial(port), g.pole_count[i]);
+            apd_esc_telem[i] = NEW_NOTHROW ESC_APD_Telem (hal.serial(port), g.pole_count[i]);
         }
     }
 #endif
@@ -608,7 +617,9 @@ void AP_Periph_FW::prepare_reboot()
 
         // delay to give the ACK a chance to get out, the LEDs to flash,
         // the IO board safety to be forced on, the parameters to flush,
+        hal.scheduler->expect_delay_ms(100);
         hal.scheduler->delay(40);
+        hal.scheduler->expect_delay_ms(0);
 }
 
 /*
@@ -616,6 +627,7 @@ void AP_Periph_FW::prepare_reboot()
  */
 void AP_Periph_FW::reboot(bool hold_in_bootloader)
 {
+    prepare_reboot();
     hal.scheduler->reboot(hold_in_bootloader);
 }
 
