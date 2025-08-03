@@ -1,0 +1,15 @@
+# Build products
+*.o
+*.elf
+*.hex
+*.bin
+*.map
+
+# Arduino IDE build folder
+build/
+
+# Mac OS metadata
+.DS_Store
+
+# Logs created on SD card
+LOG*.CSV
