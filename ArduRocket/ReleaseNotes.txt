@@ -1,0 +1,35 @@
+ArduRocket Release Notes
+========================
+
+Version 1.0.0 - Initial Release
+-------------------------------
+
+This is the initial release of ArduRocket, an autonomous rocket control system based on the ArduPilot platform.
+
+New Features:
+- Multi-stage flight control (Launch, Boost, Coast, Descent, Landing)
+- Basic attitude control system
+- Parameter-based configuration
+- Flight stage management
+- Basic servo control framework
+
+Technical Details:
+- Built on ArduPilot framework
+- Compatible with Pixhawk series controllers
+- Supports standard ArduPilot sensors and telemetry
+- Extensible parameter system
+
+Known Issues:
+- Limited to basic functionality in this initial release
+- Advanced guidance algorithms not yet implemented
+- Recovery system integration pending
+
+Future Plans:
+- Advanced trajectory optimization
+- GPS-guided navigation
+- Advanced recovery systems
+- Multi-motor support
+- Real-time telemetry analysis
+
+For support and bug reports, please visit:
+https://discuss.ardupilot.org/

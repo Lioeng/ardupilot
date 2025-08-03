@@ -1,0 +1,29 @@
+# ArduRocket Example Configuration
+# Copy these parameters to your Mission Planner or APM Planner
+
+# Vehicle Type
+VEHICLE = 1
+
+# Flight Stage Durations (in milliseconds)
+LAUNCH_DELAY = 5000
+BOOST_DURATION = 30000
+COAST_DURATION = 60000
+DESCENT_DURATION = 30000
+
+# Flight Parameters
+MAX_ALTITUDE = 1000
+
+# Control Gains
+THRUST_CURVE = 1.0
+FIN_GAIN = 1.0
+TVC_GAIN = 1.0
+
+# Safety Parameters
+FS_TIMEOUT = 5
+FS_ACTION = 1
+FS_LONG_TIMEOUT = 10
+FS_LONG_ACTION = 1
+
+# Telemetry
+SERIAL1_PROTOCOL = 1
+SERIAL1_BAUD = 57

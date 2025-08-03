@@ -1,0 +1,37 @@
+name: ArduRocket Build
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+        
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake python3 python3-pip
+        sudo apt-get install -y libxml2-dev libxslt-dev python3-dev
+        sudo apt-get install -y gcc-arm-none-eabi
+        
+    - name: Configure build
+      run: |
+        ./waf configure --board sitl
+        
+    - name: Build ArduRocket
+      run: |
+        ./waf rocket
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: ardurocket-build
+        path: build/sitl/bin/ardurocket
