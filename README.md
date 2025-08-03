@@ -35,6 +35,8 @@ It is continually being expanded to provide support for new emerging vehicle typ
 
 - Antenna Tracker : [code](https://github.com/ArduPilot/ardupilot/tree/master/AntennaTracker), [wiki](https://ardupilot.org/antennatracker/index.html)
 
+- ArduRocket : [code](https://github.com/ArduPilot/ardupilot/tree/master/ArduRocket), [wiki](https://ardupilot.org/rocket/index.html)
+
 ## User Support & Discussion Forums ##
 
 - Support Forum: <https://discuss.ardupilot.org/>
